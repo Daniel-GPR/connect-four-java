@@ -44,19 +44,30 @@ public class ConnectFour {
     }
 
     for (int i = 0; i < rows; i++) {
-      Util.print(String.format("%s| ", " ".repeat(boardPadding)));
+      Util.print(String.format("%s|  ", " ".repeat(boardPadding)));
       for (int j = 0; j < columns; j++) {
         Util.print(gameBoard[j][i].toString());
-        Util.print(" ");
+        Util.print("  ");
       }
       Util.println("|");
     }
 
+    // print bottom divider
     Util.print(" ".repeat(boardPadding));
-    for (int k = 0; k < (columns * 2) + 3; k++) {
+    int boardWidth = (columns) + (columns + 1) * 2 + 2;
+    for (int k = 0; k < boardWidth; k++) {
       Util.print(Tile.EMPTY.toString());
     }
     Util.println("");
+
+    // print column numbers
+    Util.print(" ".repeat(boardPadding));
+    Util.print("   ");
+    for (int k = 0; k < columns; k++) {
+      Util.print(String.valueOf(k+1) + "  ");
+    }
+    Util.println("");
+
   }
 
   public void startGameSetup() {
