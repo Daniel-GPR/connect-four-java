@@ -26,11 +26,9 @@ public class ConnectFour {
     CONTINUE;
   }
 
-
   ConnectFour() {
     super();
   }
-
 
   private static ConstraintsFunctions.intConstraint dimensionConstraintFunc = (input) -> input >= minDimensions
       && input <= maxDimensions;
@@ -38,7 +36,6 @@ public class ConnectFour {
   private ConstraintsFunctions.intConstraint insertedRowConstraint = (input) -> {
     return input >= 1 && input <= columns && gameBoard[input - 1][rows - 1] == Tile.EMPTY;
   };
-
 
   private void initializeEmptyBoard() throws Exception {
 
@@ -54,7 +51,6 @@ public class ConnectFour {
       }
     }
   }
-
 
   private void printBoard() {
     // lets assume that we are counting rows bottom to top (in ascending index
@@ -92,7 +88,6 @@ public class ConnectFour {
 
   }
 
-
   public void startGameSetup() {
 
     // prompt player names
@@ -125,7 +120,6 @@ public class ConnectFour {
 
   }
 
-
   public void startGame() {
 
     // lets assume this check is sufficient for now, as these values are private and
@@ -135,9 +129,9 @@ public class ConnectFour {
       return;
     }
 
-    currentPlayer = playerA;
+    currentPlayer = playerA; // playerA starts
     while (true) {
-      int insertedCol = promptColumnForInsertion(currentPlayer); // col (counting from 0) for code cleanliness
+      int insertedCol = promptColumnForInsertion(currentPlayer); // prompt and verify input for col number
       int insertedRow = insertChip(currentPlayer.chip, insertedCol); // row (counting from 0) for code cleanliness
 
       printBoard();
@@ -145,7 +139,13 @@ public class ConnectFour {
       RoundOutcome outcome = calculateRoundOutcome(insertedCol, insertedRow);
 
       if (outcome == RoundOutcome.PLAYER_A_WINS || outcome == RoundOutcome.PLAYER_B_WINS) {
-        Util.println("Game Over, Player won!");
+        Util.println(String.format("GAME OVER. THE WINNER IS %s!",
+            outcome == RoundOutcome.PLAYER_A_WINS ? playerA.name : playerB.name));
+        return;
+      }
+
+      if (outcome == RoundOutcome.DRAW) {
+        Util.println("GAME OVER. WE HAVE A DRAW.");
         return;
       }
 
@@ -153,7 +153,6 @@ public class ConnectFour {
       currentPlayer = playerA.chip == currentPlayer.chip ? playerB : playerA;
     }
   }
-
 
   // insertedCol and insertedRow are counted from 0 (first col is 0 not 1)
   private RoundOutcome calculateRoundOutcome(int insertedCol, int insertedRow) {
@@ -166,16 +165,18 @@ public class ConnectFour {
       return currentPlayer.chip == playerA.chip ? RoundOutcome.PLAYER_A_WINS : RoundOutcome.PLAYER_B_WINS;
     }
 
+    if (boardFull()) {
+      return RoundOutcome.DRAW;
+    }
+
     return RoundOutcome.CONTINUE;
   }
-
 
   private int promptColumnForInsertion(Player player) {
     return Util.readInt(String.format("%s, your turn. Select column", player.name), "Invalid input, enter again",
         insertedRowConstraint) - 1;
   }
 
-  
   private int insertChip(Chip chip, int column) {
     for (int i = 0; i < rows; i++) {
       if (gameBoard[column][i] == Tile.EMPTY) {
@@ -185,7 +186,6 @@ public class ConnectFour {
     }
     return -1; // this case should not hit, promptColumnForInsertion should take care of this
   }
-
 
   private boolean scanVerticalWin(int insertedCol, int insertedRow) {
     int offset = -(lineForWin - 1); // let's offset left to right
@@ -215,7 +215,6 @@ public class ConnectFour {
 
     return false;
   }
-
 
   private boolean scanHorizontalWin(int insertedCol, int insertedRow) {
     int offset = -(lineForWin - 1); // let's offset left to right
@@ -248,7 +247,6 @@ public class ConnectFour {
 
     return false;
   }
-
 
   private boolean scanDiagonalWin(int insertedCol, int insertedRow, int slope) {
     if (slope != -1 && slope != 1) {
@@ -289,16 +287,22 @@ public class ConnectFour {
 
   }
 
-
   private boolean rowIndexOffsetWithinBounds(int rowIndex, int indexOffset) {
     return rowIndex + indexOffset >= 0 && rowIndex + indexOffset < rows;
   }
-
 
   private boolean columnIndexOffsetWithinBounds(int columnIndex, int indexOffset) {
     return columnIndex + indexOffset >= 0 && columnIndex + indexOffset < columns;
   }
 
-
+  // returns true if board is full (can't add more chips)
+  private boolean boardFull() {
+    for (int i = 0; i < columns; i++) {
+      if (gameBoard[i][rows - 1] == Tile.EMPTY) {
+        return false;
+      }
+    }
+    return true;
+  }
 
 }
