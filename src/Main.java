@@ -5,6 +5,7 @@ public class Main {
     ConnectFour game = new ConnectFour();
     
     game.startGameSetup();
+    game.startGame();
 
   }
 }
