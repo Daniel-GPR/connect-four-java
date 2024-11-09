@@ -3,17 +3,17 @@ package src;
 public class Util {
     
 interface ConstraintsFunctions {  
-  public interface stringConstraint {
+  interface stringConstraint {
     public boolean constraint(String input);  
   }
 
-  public interface intConstraint {
+  interface intConstraint {
     public boolean constraint(int input);  
   }
 }  
 
   public static String readLine( String prompt ){
-    System.out.print(prompt + ": ");
+    print(prompt + ": ");
     String input = System.console().readLine();
 
     return input;
@@ -37,7 +37,16 @@ interface ConstraintsFunctions {
   }
 
   public static int readInt( String prompt ){
-    return stringToInt(readLine(prompt));
+    int num;
+    while(true){
+      try{
+        num = stringToInt(readLine(prompt));
+        return num;
+      }catch(Exception e){
+        print("Not a number. ");
+        continue;
+      }
+    }
   }
 
 
@@ -45,7 +54,7 @@ interface ConstraintsFunctions {
 
     String currentPrompt = prompt;
     while(true){
-      int input = stringToInt(readLine(currentPrompt));
+      int input = readInt(currentPrompt);
       if(constraintFunc.constraint(input)){
         return input;
       }
