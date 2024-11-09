@@ -13,10 +13,13 @@ interface ConstraintsFunctions {
 }  
 
   public static String readLine( String prompt ){
-    print(prompt + ": ");
-    String input = System.console().readLine();
-
-    return input;
+    while(true){
+      print(prompt + ": ");
+      String input = System.console().readLine();
+      if(!input.isEmpty()){
+        return input;
+      }
+    }
   }
 
 
