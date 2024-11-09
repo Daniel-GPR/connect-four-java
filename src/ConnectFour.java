@@ -17,7 +17,6 @@ public class ConnectFour {
   private Player playerB;
   private Player currentPlayer;
 
-
   private Tile[][] gameBoard;
 
   private enum RoundOutcome {
@@ -130,17 +129,23 @@ public class ConnectFour {
       return;
     }
 
-    currentPlayer = playerA;
+    currentPlayer = playerA; // playerA starts
     while (true) {
-      int insertedCol = promptColumnForInsertion(currentPlayer); // col (counting from 0) for code cleanliness
+      int insertedCol = promptColumnForInsertion(currentPlayer); // prompt and verify input for col number
       int insertedRow = insertChip(currentPlayer.chip, insertedCol); // row (counting from 0) for code cleanliness
 
       printBoard();
-      
+
       RoundOutcome outcome = calculateRoundOutcome(insertedCol, insertedRow);
 
-      if(outcome == RoundOutcome.PLAYER_A_WINS || outcome == RoundOutcome.PLAYER_B_WINS){
-        Util.println("Game Over, Player won!");
+      if (outcome == RoundOutcome.PLAYER_A_WINS || outcome == RoundOutcome.PLAYER_B_WINS) {
+        Util.println(String.format("GAME OVER. THE WINNER IS %s!",
+            outcome == RoundOutcome.PLAYER_A_WINS ? playerA.name : playerB.name));
+        return;
+      }
+
+      if (outcome == RoundOutcome.DRAW) {
+        Util.println("GAME OVER. WE HAVE A DRAW.");
         return;
       }
 
@@ -149,21 +154,25 @@ public class ConnectFour {
     }
   }
 
-
   // insertedCol and insertedRow are counted from 0 (first col is 0 not 1)
   private RoundOutcome calculateRoundOutcome(int insertedCol, int insertedRow) {
 
-    boolean hasWon = scanHorizontalWin(insertedCol, insertedRow) || scanVerticalWin(insertedCol, insertedRow);
+    boolean someoneHasWon = scanHorizontalWin(insertedCol, insertedRow) || scanVerticalWin(insertedCol, insertedRow)
+        || scanDiagonalWin(insertedCol, insertedRow, 1) || scanDiagonalWin(insertedCol, insertedRow, -1);
+    ;
 
-    
-    if(hasWon){
+    if (someoneHasWon) {
       return currentPlayer.chip == playerA.chip ? RoundOutcome.PLAYER_A_WINS : RoundOutcome.PLAYER_B_WINS;
+    }
+
+    if (boardFull()) {
+      return RoundOutcome.DRAW;
     }
 
     return RoundOutcome.CONTINUE;
   }
 
-  private int  promptColumnForInsertion(Player player) {
+  private int promptColumnForInsertion(Player player) {
     return Util.readInt(String.format("%s, your turn. Select column", player.name), "Invalid input, enter again",
         insertedRowConstraint) - 1;
   }
@@ -178,67 +187,122 @@ public class ConnectFour {
     return -1; // this case should not hit, promptColumnForInsertion should take care of this
   }
 
-  private void drawScenario(){
-    Util.println("GAME OVER. WE HAVE A DRAW");
-  }
+  private boolean scanVerticalWin(int insertedCol, int insertedRow) {
+    int offset = -(lineForWin - 1); // let's offset left to right
+    int consecutiveChips = 0;
 
-  private boolean scanVerticalWin(int insertedCol, int insertedRow){
+    while (offset <= 0) {
 
-    int totalConsecutive = 1; // initialized as one, due to the last dropped peace
-    int cycle = 1;
-    boolean propagate = insertedRow > 0; // just need to scan downwards
-
-    while(propagate){
-
-      if(gameBoard[insertedCol][insertedRow - cycle] == currentPlayer.chip.toTile()){
-        totalConsecutive++;
-        propagate = insertedRow - (cycle + 1) >= 0; // check if propagation will be possible next cycle
-      }else{
-        propagate = false;
+      // need to make sure this is within bounds
+      if (!rowIndexOffsetWithinBounds(insertedRow, offset)) {
+        offset++;
+        continue;
       }
-      if(totalConsecutive >= lineForWin){
+
+      // within bounds, check tile
+      if (gameBoard[insertedCol][insertedRow + offset] == currentPlayer.chip.toTile()) {
+        consecutiveChips++;
+      } else {
+        consecutiveChips = 0; // reset
+      }
+
+      // check before next loop
+      if (consecutiveChips >= lineForWin) {
         return true;
       }
-
-      cycle++;
+      offset++;
     }
+
     return false;
   }
 
-  
-  private boolean scanHorizontalWin(int insertedCol, int insertedRow){
-    boolean propagateRight = insertedCol < columns - 1;
-    boolean propagateLeft = insertedCol > 0;
+  private boolean scanHorizontalWin(int insertedCol, int insertedRow) {
+    int offset = -(lineForWin - 1); // let's offset left to right
+    int consecutiveChips = 0;
 
-    int totalConsecutive = 1; // initialized as one, due to the last dropped peace
-    int cycle = 1;
-    while(propagateRight || propagateLeft){
+    while (offset < lineForWin) {
 
-      // increment if left tile is same chip
-      if(propagateLeft && gameBoard[insertedCol - cycle][insertedRow] == currentPlayer.chip.toTile()){
-        totalConsecutive++;
-        propagateLeft = insertedCol - (cycle + 1) >= 0; // check if propagation will be possible next cycle
-      }else{
-        // need to cancel next propagation
-        propagateLeft = false;
-      }
-      // increment if right tile is same chip
-      if(propagateRight && gameBoard[insertedCol + cycle][insertedRow] == currentPlayer.chip.toTile()){
-        totalConsecutive++;
-        propagateRight = insertedCol + (cycle + 1) <= columns - 1; // check if propagation will be possible next cycle
-      }else{
-        // need to cancel next propagation
-        propagateRight = false;
+      // need to make sure this is within bounds
+      if (!columnIndexOffsetWithinBounds(insertedCol, offset)) {
+        offset++;
+        continue;
       }
 
-      if(totalConsecutive >= lineForWin){
+      // within bounds, check tile
+      if (gameBoard[insertedCol + offset][insertedRow] == currentPlayer.chip.toTile()) {
+        consecutiveChips++;
+      } else {
+        consecutiveChips = 0; // reset
+        if (offset > 0) { // early exit if needed, this chip no longer determines a win in this case
+          break;
+        }
+      }
+
+      // check before next loop
+      if (consecutiveChips >= lineForWin) {
         return true;
       }
-
-      // increment cycle
-      cycle++;
+      offset++;
     }
+
     return false;
+  }
+
+  private boolean scanDiagonalWin(int insertedCol, int insertedRow, int slope) {
+    if (slope != -1 && slope != 1) {
+      System.err.println("only values of -1 and 1 are acceptable as slope param");
+      return false;
+    }
+
+    int offset = -(lineForWin - 1); // let's offset left to right
+    int consecutiveChips = 0;
+
+    while (offset < lineForWin) {
+
+      // need to make sure this is within bounds
+      if (!(rowIndexOffsetWithinBounds(insertedRow, offset * slope)
+          && columnIndexOffsetWithinBounds(insertedCol, offset))) {
+        offset++;
+        continue;
+      }
+
+      // within bounds, check tile
+      if (gameBoard[insertedCol + offset][insertedRow + offset * slope] == currentPlayer.chip.toTile()) {
+        consecutiveChips++;
+      } else {
+        consecutiveChips = 0; // reset
+        if (offset > 0) { // early exit if needed, this chip no longer determines a win in this case
+          break;
+        }
+      }
+
+      // check before next loop
+      if (consecutiveChips >= lineForWin) {
+        return true;
+      }
+      offset++;
+    }
+
+    return false;
+
+  }
+
+  private boolean rowIndexOffsetWithinBounds(int rowIndex, int indexOffset) {
+    return rowIndex + indexOffset >= 0 && rowIndex + indexOffset < rows;
+  }
+
+  private boolean columnIndexOffsetWithinBounds(int columnIndex, int indexOffset) {
+    return columnIndex + indexOffset >= 0 && columnIndex + indexOffset < columns;
+  }
+
+  // returns true if board is full (can't add more chips)
+  private boolean boardFull() {
+    for (int i = 0; i < columns; i++) {
+      if (gameBoard[i][rows - 1] == Tile.EMPTY) {
+        return false;
+      }
+    }
+    return true;
   }
 
 }
