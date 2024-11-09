@@ -4,16 +4,28 @@ import src.Util.ConstraintsFunctions;
 
 public class ConnectFour {
 
+  // Enter one digit or two digit numbers only, otherwise print function
+  // will print 3-digit numbers off-column
   private static final int minDimensions = 4;
-  private static final int maxDimensions = 16;
+  private static final int maxDimensions = 15;
   private static final int boardPadding = 5;
+  private static final int lineForWin = 4; // defines the "length" of a winning line
 
   private int rows;
   private int columns;
   private Player playerA;
   private Player playerB;
+  private Player currentPlayer;
+
 
   private Tile[][] gameBoard;
+
+  private enum RoundOutcome {
+    PLAYER_A_WINS,
+    PLAYER_B_WINS,
+    DRAW,
+    CONTINUE;
+  }
 
   ConnectFour() {
     super();
@@ -26,7 +38,7 @@ public class ConnectFour {
     return input >= 1 && input <= columns && gameBoard[input - 1][rows - 1] == Tile.EMPTY;
   };
 
-  private void initializeBoard() throws Exception {
+  private void initializeEmptyBoard() throws Exception {
 
     if (rows == 0 || columns == 0) {
       throw new Exception("No board constraints provided");
@@ -42,6 +54,9 @@ public class ConnectFour {
   }
 
   private void printBoard() {
+    // lets assume that we are counting rows bottom to top (in ascending index
+    // order), and columns left to right (in ascending index order).
+
     // print some padding
     for (int i = 0; i < boardPadding; i++) {
       Util.println("");
@@ -67,8 +82,8 @@ public class ConnectFour {
     // print column numbers
     Util.print(" ".repeat(boardPadding));
     Util.print("   ");
-    for (int k = 0; k < columns; k++) {
-      Util.print(String.valueOf(k + 1) + "  ");
+    for (int k = 1; k <= columns; k++) {
+      Util.print(String.valueOf(k) + (k >= 10 ? " " : "  ")); // two digit numbers need less padding
     }
     Util.println("");
 
@@ -95,12 +110,10 @@ public class ConnectFour {
         String.format("Incorrect input. Please enter the number of columns [%s, %s]", minDimensions, maxDimensions),
         dimensionConstraintFunc);
 
-    // init board
-    gameBoard = new Tile[columns][rows];
-
     try {
-      initializeBoard();
+      initializeEmptyBoard();
       printBoard();
+
     } catch (Exception e) {
       System.err.println(e.getMessage());
       return;
@@ -110,35 +123,122 @@ public class ConnectFour {
 
   public void startGame() {
 
-    // lets assume this check is sufficient for now as these values are private and
+    // lets assume this check is sufficient for now, as these values are private and
     // are set in the startGameSetup method only
     if (rows == 0 || columns == 0) {
       System.err.println("Run game setup first.");
       return;
     }
 
-    Player currentPlayer = playerA;
+    currentPlayer = playerA;
     while (true) {
-      int insertedCol = promptColumnForInsertion(currentPlayer);
-      insertChip(currentPlayer.chip, insertedCol);
+      int insertedCol = promptColumnForInsertion(currentPlayer); // col (counting from 0) for code cleanliness
+      int insertedRow = insertChip(currentPlayer.chip, insertedCol); // row (counting from 0) for code cleanliness
+
       printBoard();
+      
+      RoundOutcome outcome = calculateRoundOutcome(insertedCol, insertedRow);
+
+      if(outcome == RoundOutcome.PLAYER_A_WINS || outcome == RoundOutcome.PLAYER_B_WINS){
+        Util.println("Game Over, Player won!");
+        return;
+      }
 
       // swap players before next cycle
       currentPlayer = playerA.chip == currentPlayer.chip ? playerB : playerA;
     }
   }
 
-  public int promptColumnForInsertion(Player player) {
-    return Util.readInt(String.format("%s, your turn. Select column", player.name), "Invalid input, enter again",
-        insertedRowConstraint);
+
+  // insertedCol and insertedRow are counted from 0 (first col is 0 not 1)
+  private RoundOutcome calculateRoundOutcome(int insertedCol, int insertedRow) {
+
+    boolean hasWon = scanHorizontalWin(insertedCol, insertedRow) || scanVerticalWin(insertedCol, insertedRow);
+
+    
+    if(hasWon){
+      return currentPlayer.chip == playerA.chip ? RoundOutcome.PLAYER_A_WINS : RoundOutcome.PLAYER_B_WINS;
+    }
+
+    return RoundOutcome.CONTINUE;
   }
 
-  public void insertChip(Chip chip, int column) {
+  private int  promptColumnForInsertion(Player player) {
+    return Util.readInt(String.format("%s, your turn. Select column", player.name), "Invalid input, enter again",
+        insertedRowConstraint) - 1;
+  }
+
+  private int insertChip(Chip chip, int column) {
     for (int i = 0; i < rows; i++) {
-      if (gameBoard[column - 1][i] == Tile.EMPTY) {
-        gameBoard[column - 1][i] = chip.toTile();
-        break;
+      if (gameBoard[column][i] == Tile.EMPTY) {
+        gameBoard[column][i] = chip.toTile();
+        return i;
       }
     }
+    return -1; // this case should not hit, promptColumnForInsertion should take care of this
   }
+
+  private void drawScenario(){
+    Util.println("GAME OVER. WE HAVE A DRAW");
+  }
+
+  private boolean scanVerticalWin(int insertedCol, int insertedRow){
+
+    int totalConsecutive = 1; // initialized as one, due to the last dropped peace
+    int cycle = 1;
+    boolean propagate = insertedRow > 0; // just need to scan downwards
+
+    while(propagate){
+
+      if(gameBoard[insertedCol][insertedRow - cycle] == currentPlayer.chip.toTile()){
+        totalConsecutive++;
+        propagate = insertedRow - (cycle + 1) >= 0; // check if propagation will be possible next cycle
+      }else{
+        propagate = false;
+      }
+      if(totalConsecutive >= lineForWin){
+        return true;
+      }
+
+      cycle++;
+    }
+    return false;
+  }
+
+  
+  private boolean scanHorizontalWin(int insertedCol, int insertedRow){
+    boolean propagateRight = insertedCol < columns - 1;
+    boolean propagateLeft = insertedCol > 0;
+
+    int totalConsecutive = 1; // initialized as one, due to the last dropped peace
+    int cycle = 1;
+    while(propagateRight || propagateLeft){
+
+      // increment if left tile is same chip
+      if(propagateLeft && gameBoard[insertedCol - cycle][insertedRow] == currentPlayer.chip.toTile()){
+        totalConsecutive++;
+        propagateLeft = insertedCol - (cycle + 1) >= 0; // check if propagation will be possible next cycle
+      }else{
+        // need to cancel next propagation
+        propagateLeft = false;
+      }
+      // increment if right tile is same chip
+      if(propagateRight && gameBoard[insertedCol + cycle][insertedRow] == currentPlayer.chip.toTile()){
+        totalConsecutive++;
+        propagateRight = insertedCol + (cycle + 1) <= columns - 1; // check if propagation will be possible next cycle
+      }else{
+        // need to cancel next propagation
+        propagateRight = false;
+      }
+
+      if(totalConsecutive >= lineForWin){
+        return true;
+      }
+
+      // increment cycle
+      cycle++;
+    }
+    return false;
+  }
+
 }

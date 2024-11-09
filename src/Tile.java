@@ -18,5 +18,14 @@ public enum Tile {
     public String toString() {
       return "-";
     }
+
+  };
+
+  public boolean isEqual(Tile tile){
+    return this == tile;
+  }
+
+  public boolean isEqual(Chip chip){
+    return this == chip.toTile();
   }
 }
