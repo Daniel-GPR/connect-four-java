@@ -21,11 +21,11 @@ public enum Tile {
 
   };
 
-  public boolean isEqual(Tile tile){
+  public boolean isEqual(Tile tile) {
     return this == tile;
   }
 
-  public boolean isEqual(Chip chip){
+  public boolean isEqual(Chip chip) {
     return this == chip.toTile();
   }
 }

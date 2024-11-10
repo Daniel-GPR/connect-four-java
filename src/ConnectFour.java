@@ -4,7 +4,7 @@ import src.Util.ConstraintsFunctions;
 
 public class ConnectFour {
 
-  // Enter one digit or two digit numbers only, otherwise print function
+  // Enter one digit or two digit numbers only, otherwise printBoard() function
   // will print 3-digit numbers off-column
   private static final int minDimensions = 4;
   private static final int maxDimensions = 15;
@@ -20,8 +20,7 @@ public class ConnectFour {
   private Tile[][] gameBoard;
 
   private enum RoundOutcome {
-    PLAYER_A_WINS,
-    PLAYER_B_WINS,
+    PLAYER_WINS,
     DRAW,
     CONTINUE;
   }
@@ -92,10 +91,12 @@ public class ConnectFour {
 
     // prompt player names
     playerA = new Player(Util.readLine("Please enter the name of the 1st player"));
-    playerB = new Player(Util.readLine("Please enter the name of the 2nd player"));
+    playerB = new Player(
+        Util.readLine("Please enter the name of the 2nd player", "Player names must be different, enter another name",
+            (input) -> !playerA.name.toLowerCase().equals(input.toLowerCase())));
 
     // prompt chips
-    playerA.setPlayerChip(Util.readChip(String.format("%s, please select your chip", playerA.name),
+    playerA.setPlayerChip(Util.readChip(String.format("%s, please select your chip ('x' or 'o')", playerA.name),
         "Invalid input, please enter 'x' or 'o'"));
     playerB.setPlayerChip(playerA.chip == Chip.O ? Chip.X : Chip.O);
     Util.println(String.format("%s selected chip: %s", playerA.name, playerA.chip));
@@ -111,7 +112,6 @@ public class ConnectFour {
 
     try {
       initializeEmptyBoard();
-      printBoard();
 
     } catch (Exception e) {
       System.err.println(e.getMessage());
@@ -129,6 +129,8 @@ public class ConnectFour {
       return;
     }
 
+    printBoard();
+
     currentPlayer = playerA; // playerA starts
     while (true) {
       int insertedCol = promptColumnForInsertion(currentPlayer); // prompt and verify input for col number
@@ -138,9 +140,9 @@ public class ConnectFour {
 
       RoundOutcome outcome = calculateRoundOutcome(insertedCol, insertedRow);
 
-      if (outcome == RoundOutcome.PLAYER_A_WINS || outcome == RoundOutcome.PLAYER_B_WINS) {
+      if (outcome == RoundOutcome.PLAYER_WINS) {
         Util.println(String.format("GAME OVER. THE WINNER IS %s!",
-            outcome == RoundOutcome.PLAYER_A_WINS ? playerA.name : playerB.name));
+            currentPlayer.name));
         return;
       }
 
@@ -162,7 +164,7 @@ public class ConnectFour {
     ;
 
     if (someoneHasWon) {
-      return currentPlayer.chip == playerA.chip ? RoundOutcome.PLAYER_A_WINS : RoundOutcome.PLAYER_B_WINS;
+      return RoundOutcome.PLAYER_WINS;
     }
 
     if (boardFull()) {
@@ -188,22 +190,21 @@ public class ConnectFour {
   }
 
   private boolean scanVerticalWin(int insertedCol, int insertedRow) {
-    int offset = -(lineForWin - 1); // let's offset left to right
+    int offset = -(lineForWin - 1); // let's offset bottom to top
     int consecutiveChips = 0;
 
     while (offset <= 0) {
 
       // need to make sure this is within bounds
       if (!rowIndexOffsetWithinBounds(insertedRow, offset)) {
-        offset++;
-        continue;
+        return false; // can early exit, as if the chain is broken once here it cannot be long enough
       }
 
       // within bounds, check tile
       if (gameBoard[insertedCol][insertedRow + offset] == currentPlayer.chip.toTile()) {
         consecutiveChips++;
       } else {
-        consecutiveChips = 0; // reset
+        return false; // can early exit here too.
       }
 
       // check before next loop

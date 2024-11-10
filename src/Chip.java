@@ -13,8 +13,9 @@ public enum Chip {
       return "o";
     }
   };
+
   public Tile toTile() {
     return Tile.valueOf(this.toString().toUpperCase());
   }
-  
+
 }
