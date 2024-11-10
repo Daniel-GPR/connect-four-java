@@ -20,8 +20,7 @@ public class ConnectFour {
   private Tile[][] gameBoard;
 
   private enum RoundOutcome {
-    PLAYER_A_WINS,
-    PLAYER_B_WINS,
+    PLAYER_WINS,
     DRAW,
     CONTINUE;
   }
@@ -140,9 +139,9 @@ public class ConnectFour {
 
       RoundOutcome outcome = calculateRoundOutcome(insertedCol, insertedRow);
 
-      if (outcome == RoundOutcome.PLAYER_A_WINS || outcome == RoundOutcome.PLAYER_B_WINS) {
+      if (outcome == RoundOutcome.PLAYER_WINS) {
         Util.println(String.format("GAME OVER. THE WINNER IS %s!",
-            outcome == RoundOutcome.PLAYER_A_WINS ? playerA.name : playerB.name));
+            currentPlayer.name));
         return;
       }
 
@@ -164,7 +163,7 @@ public class ConnectFour {
     ;
 
     if (someoneHasWon) {
-      return currentPlayer.chip == playerA.chip ? RoundOutcome.PLAYER_A_WINS : RoundOutcome.PLAYER_B_WINS;
+      return RoundOutcome.PLAYER_WINS;
     }
 
     if (boardFull()) {
