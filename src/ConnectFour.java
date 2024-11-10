@@ -112,7 +112,6 @@ public class ConnectFour {
 
     try {
       initializeEmptyBoard();
-      printBoard();
 
     } catch (Exception e) {
       System.err.println(e.getMessage());
@@ -129,6 +128,8 @@ public class ConnectFour {
       System.err.println("Run game setup first.");
       return;
     }
+
+    printBoard();
 
     currentPlayer = playerA; // playerA starts
     while (true) {
