@@ -1,7 +1,10 @@
 package src;
 
+import java.util.UUID;
+
 public class Player {
 
+  public UUID id;
   public String name;
   public Chip chip;
 
@@ -11,6 +14,7 @@ public class Player {
   }
 
   public Player(String name){
+    this.id = UUID.randomUUID();
     this.name = name;
   }
 

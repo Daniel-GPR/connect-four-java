@@ -4,7 +4,7 @@ import src.Util.ConstraintsFunctions;
 
 public class ConnectFour {
 
-  // Enter one digit or two digit numbers only, otherwise print function
+  // Enter one digit or two digit numbers only, otherwise printBoard() function
   // will print 3-digit numbers off-column
   private static final int minDimensions = 4;
   private static final int maxDimensions = 15;
@@ -92,7 +92,7 @@ public class ConnectFour {
 
     // prompt player names
     playerA = new Player(Util.readLine("Please enter the name of the 1st player"));
-    playerB = new Player(Util.readLine("Please enter the name of the 2nd player"));
+    playerB = new Player(Util.readLine("Please enter the name of the 2nd player", "Player names must be different, enter another name", (input) -> !playerA.name.toLowerCase().equals(input.toLowerCase())));
 
     // prompt chips
     playerA.setPlayerChip(Util.readChip(String.format("%s, please select your chip", playerA.name),
@@ -188,22 +188,21 @@ public class ConnectFour {
   }
 
   private boolean scanVerticalWin(int insertedCol, int insertedRow) {
-    int offset = -(lineForWin - 1); // let's offset left to right
+    int offset = -(lineForWin - 1); // let's offset bottom to top
     int consecutiveChips = 0;
 
     while (offset <= 0) {
 
       // need to make sure this is within bounds
       if (!rowIndexOffsetWithinBounds(insertedRow, offset)) {
-        offset++;
-        continue;
+        return false; // can early exit, as if the chain is broken once here it cannot be long enough
       }
 
       // within bounds, check tile
       if (gameBoard[insertedCol][insertedRow + offset] == currentPlayer.chip.toTile()) {
         consecutiveChips++;
       } else {
-        consecutiveChips = 0; // reset
+        return false; // can early exit here too.
       }
 
       // check before next loop
