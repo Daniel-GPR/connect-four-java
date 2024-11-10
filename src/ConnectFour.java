@@ -97,7 +97,7 @@ public class ConnectFour {
             (input) -> !playerA.name.toLowerCase().equals(input.toLowerCase())));
 
     // prompt chips
-    playerA.setPlayerChip(Util.readChip(String.format("%s, please select your chip", playerA.name),
+    playerA.setPlayerChip(Util.readChip(String.format("%s, please select your chip ('x' or 'o')", playerA.name),
         "Invalid input, please enter 'x' or 'o'"));
     playerB.setPlayerChip(playerA.chip == Chip.O ? Chip.X : Chip.O);
     Util.println(String.format("%s selected chip: %s", playerA.name, playerA.chip));
