@@ -8,12 +8,12 @@ public class Player {
   public String name;
   public Chip chip;
 
-  public Player(String name, Chip chip){
+  public Player(String name, Chip chip) {
     this(name);
     this.chip = chip;
   }
 
-  public Player(String name){
+  public Player(String name) {
     this.id = UUID.randomUUID();
     this.name = name;
   }
@@ -21,6 +21,5 @@ public class Player {
   public void setPlayerChip(Chip chip) {
     this.chip = chip;
   }
-
 
 }

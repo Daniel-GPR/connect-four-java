@@ -92,7 +92,9 @@ public class ConnectFour {
 
     // prompt player names
     playerA = new Player(Util.readLine("Please enter the name of the 1st player"));
-    playerB = new Player(Util.readLine("Please enter the name of the 2nd player", "Player names must be different, enter another name", (input) -> !playerA.name.toLowerCase().equals(input.toLowerCase())));
+    playerB = new Player(
+        Util.readLine("Please enter the name of the 2nd player", "Player names must be different, enter another name",
+            (input) -> !playerA.name.toLowerCase().equals(input.toLowerCase())));
 
     // prompt chips
     playerA.setPlayerChip(Util.readChip(String.format("%s, please select your chip", playerA.name),
